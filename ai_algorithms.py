@@ -1,24 +1,92 @@
-class MinimaxAgent:
-    """
-    Vieta Minimaksa algoritma realizācijai.
-    Pagaidām nav implementēts.
-    """
+import math
+import copy
 
-    def __init__(self, depth=3):
+class MinimaxAgent:
+    def __init__(self, depth=4):
         self.depth = depth
 
     def choose_move(self, game_state):
-        raise NotImplementedError("Minimaksa algoritms vēl nav realizēts.")
+        best_score = -math.inf
+        best_move = None
+        
+        # We look at all possible moves from the current state
+        for idx, _ in game_state.get_available_pairs():
+            temp_state = copy.deepcopy(game_state)
+            temp_state.apply_move(idx)
+            
+            # Start the recursion (it's now the human's turn, so we minimize)
+            score = self.minimax(temp_state, self.depth - 1, False)
+            
+            if score > best_score:
+                best_score = score
+                best_move = idx
+        return best_move
 
+    def minimax(self, state, depth, is_maximizing):
+        if depth == 0 or state.is_game_over():
+            # Evaluation: Computer Score - Opponent Score
+            scores = state.get_scores()
+            # Assuming Computer is Player 2 (index 1) and Human is Player 1 (index 0)
+            # If the computer started, it might be index 0. We'll adjust based on current player.
+            return scores[1] - scores[0]
+
+        if is_maximizing:
+            max_eval = -math.inf
+            for idx, _ in state.get_available_pairs():
+                child = copy.deepcopy(state)
+                child.apply_move(idx)
+                eval = self.minimax(child, depth - 1, False)
+                max_eval = max(max_eval, eval)
+            return max_eval
+        else:
+            min_eval = math.inf
+            for idx, _ in state.get_available_pairs():
+                child = copy.deepcopy(state)
+                child.apply_move(idx)
+                eval = self.minimax(child, depth - 1, True)
+                min_eval = min(min_eval, eval)
+            return min_eval
 
 class AlphaBetaAgent:
-    """
-    Vieta Alfa-beta algoritma realizācijai.
-    Pagaidām nav implementēts.
-    """
-
-    def __init__(self, depth=3):
+    def __init__(self, depth=5): # Can afford higher depth with Alpha-Beta
         self.depth = depth
 
     def choose_move(self, game_state):
-        raise NotImplementedError("Alfa-beta algoritms vēl nav realizēts.")
+        best_score = -math.inf
+        best_move = None
+        
+        for idx, _ in game_state.get_available_pairs():
+            temp_state = copy.deepcopy(game_state)
+            temp_state.apply_move(idx)
+            score = self.alphabeta(temp_state, self.depth - 1, -math.inf, math.inf, False)
+            
+            if score > best_score:
+                best_score = score
+                best_move = idx
+        return best_move
+
+    def alphabeta(self, state, depth, alpha, beta, is_maximizing):
+        if depth == 0 or state.is_game_over():
+            scores = state.get_scores()
+            return scores[1] - scores[0]
+
+        if is_maximizing:
+            max_eval = -math.inf
+            for idx, _ in state.get_available_pairs():
+                child = copy.deepcopy(state)
+                child.apply_move(idx)
+                eval = self.alphabeta(child, depth - 1, alpha, beta, False)
+                max_eval = max(max_eval, eval)
+                alpha = max(alpha, eval)
+                if beta <= alpha: break
+            return max_eval
+        else:
+            min_eval = math.inf
+            for idx, _ in state.get_available_pairs():
+                child = copy.deepcopy(state)
+                child.apply_move(idx)
+                eval = self.alphabeta(child, depth - 1, alpha, beta, True)
+                min_eval = min(min_eval, eval)
+                beta = min(beta, eval)
+                if beta <= alpha: break
+            return min_eval

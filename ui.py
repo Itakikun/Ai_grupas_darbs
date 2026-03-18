@@ -1,4 +1,6 @@
 import tkinter as tk
+from ai_algorithms import MinimaxAgent, AlphaBetaAgent
+from tkinter import scrolledtext
 from tkinter import messagebox
 
 from config import (
@@ -154,26 +156,32 @@ class GameUI:
 
     def start_game(self):
         length_text = self.length_entry.get().strip()
-
         if not validate_length(length_text, MIN_LENGTH, MAX_LENGTH):
-            messagebox.showerror(
-                "Kļūda",
-                f"Ievadi veselu skaitli diapazonā no {MIN_LENGTH} līdz {MAX_LENGTH}."
-            )
+            messagebox.showerror("Kļūda", f"Ievadi veselu skaitli diapazonā no {MIN_LENGTH} līdz {MAX_LENGTH}.")
             return
 
         length = int(length_text)
         self.game = GameState(length)
-
+        
+        # Determine names based on choice
         if self.start_player_var.get() == "computer":
-            self.game.current_player = 1
-            messagebox.showinfo(
-                "Informācija",
-                "Datora sākšanas opcija ir izvēlēta, bet datora algoritms vēl nav realizēts.\n"
-                "Pašlaik spēle tiks parādīta ar sagatavotu vietu AI loģikai."
-            )
+            self.game.player_names = ["Cilvēks", "Dators"]
+            self.game.current_player = 1 # Computer is second in logic, but we can set turn
+        else:
+            self.game.player_names = ["Cilvēks", "Dators"]
+            self.game.current_player = 0
+
+        # Initialize the AI Agent
+        if self.algorithm_var.get() == "minimax":
+            self.ai_agent = MinimaxAgent(depth=3)
+        else:
+            self.ai_agent = AlphaBetaAgent(depth=5)
 
         self.create_game_screen()
+        
+        # If computer is first, trigger it
+        if self.game.current_player == 1:
+            self.root.after(1000, self.make_ai_move)
 
     def create_game_screen(self):
         self.clear_main_container()
@@ -277,28 +285,74 @@ class GameUI:
         try:
             self.game.apply_move(index)
             self.refresh_game_screen()
+            
+            # If the game isn't over and it's now the Computer's turn (index 1)
+            if not self.game.is_game_over() and self.game.current_player == 1:
+                self.root.after(600, self.make_ai_move) # Small delay for realism
         except ValueError as error:
             messagebox.showerror("Kļūda", str(error))
+
+    def make_ai_move(self):
+        if self.game.is_game_over(): return
+        
+        # The AI looks at the state and picks the best index
+        best_index = self.ai_agent.choose_move(self.game)
+        self.make_move(best_index)
 
     def show_game_over_screen(self):
         for widget in self.pairs_frame.winfo_children():
             widget.destroy()
 
-        self.pairs_title.config(text="Spēle beigusies")
+        self.pairs_title.config(text="Spēle beigusies! Gājienu vēsture:")
 
-        scores = self.game.get_scores()
+        history_area = scrolledtext.ScrolledText(
+            self.pairs_frame, 
+            width=90, 
+            height=15, 
+            font=("Courier New", 10)
+        )
+        history_area.grid(row=0, column=0, padx=10, pady=10)
 
-        self.player_label.config(text="Spēles beigas")
-        self.score_label.config(
-            text=f"1. spēlētājs: {scores[0]}    |    2. spēlētājs: {scores[1]}"
-        )
-        self.sequence_label.config(
-            text=f"Pēdējais skaitlis virknē: {self.game.sequence[0]}"
-        )
+        # Header with alignment
+        history_text = f"{'Gājiens':<8} | {'Spēlētājs':<12} | {'Izmaiņa':<12} | {'Punkti':<8} | {'Virknes izmaiņa'}\n"
+        history_text += "=" * 95 + "\n"
+        
+        # We need the starting sequence for the very first move's display
+        # We can reconstruct it from move_history[0]
+        for i, move in enumerate(self.game.move_history):
+            # To show what was replaced, we look at the sequence from the PREVIOUS move
+            # or the starting sequence if it's the first move.
+            if i == 0:
+                # Reconstruct initial sequence: take sequence_after and reverse the move
+                prev_seq = list(move['sequence_after'])
+                prev_seq[move['index']:move['index']+1] = [move['pair'][0], move['pair'][1]]
+            else:
+                prev_seq = self.game.move_history[i-1]['sequence_after']
+
+            # Highlight the pair being replaced in the "before" string
+            seq_before_list = [str(x) for x in prev_seq]
+            idx = move['index']
+            # Wrap the pair in brackets for highlighting: e.g., 010[11]0 -> 01000
+            seq_before_list[idx] = ">>" + seq_before_list[idx]
+            seq_before_list[idx+1] = seq_before_list[idx+1] + "<<"
+            highlighted_before = "".join(seq_before_list)
+            
+            after_str = "".join(move['sequence_after'])
+
+            history_text += (
+                f"{i+1:<8} | "
+                f"{move['player']:<12} | "
+                f"'{move['pair']}' -> {move['new_symbol']:<4} | "
+                f"{move['score_before']:>2} -> {move['score_after']:>2} | "
+                f"{highlighted_before}  =>  {after_str}\n"
+            )
+
+        history_area.insert(tk.INSERT, history_text)
+        history_area.configure(state='disabled')
 
         result_label = tk.Label(
             self.pairs_frame,
             text=self.game.get_final_result_text(),
             font=FONT_RESULT
         )
-        result_label.grid(row=0, column=0, padx=10, pady=10)
+        result_label.grid(row=1, column=0, padx=10, pady=10)
