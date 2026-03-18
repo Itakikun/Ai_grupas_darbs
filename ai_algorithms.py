@@ -1,6 +1,25 @@
 import math
 import copy
 
+def heuristic(state):
+    """
+    Heuristic = favorable_pairs - (computer_score - human_score)
+    
+    favorable_pairs: count of '00' and '11' pairs in the current sequence
+   
+    """
+    scores = state.get_scores()
+    score_diff = scores[1] - scores[0]  # computer - human
+
+    favorable_pairs = sum(
+        1 for i in range(len(state.sequence) - 1)
+        if (state.sequence[i] + state.sequence[i + 1]) in ("00", "11")
+    )
+
+    # pievieno -, jo dators ir maksimizetajs
+    # Lower result = better for computer; higher = better for human.
+    return -(favorable_pairs - score_diff)
+
 class MinimaxAgent:
     def __init__(self, depth=4):
         self.depth = depth
@@ -28,7 +47,7 @@ class MinimaxAgent:
             scores = state.get_scores()
             # Assuming Computer is Player 2 (index 1) and Human is Player 1 (index 0)
             # If the computer started, it might be index 0. We'll adjust based on current player.
-            return scores[1] - scores[0]
+            return heuristic(state)
 
         if is_maximizing:
             max_eval = -math.inf
@@ -68,7 +87,7 @@ class AlphaBetaAgent:
     def alphabeta(self, state, depth, alpha, beta, is_maximizing):
         if depth == 0 or state.is_game_over():
             scores = state.get_scores()
-            return scores[1] - scores[0]
+            return heuristic(state)
 
         if is_maximizing:
             max_eval = -math.inf
