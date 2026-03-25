@@ -88,21 +88,5 @@ def print_tree(node: GameTreeNode, prefix: str = "", is_last: bool = True):
     for i, child in enumerate(node.children):
         print_tree(child, child_prefix, i == len(node.children) - 1)
  
- 
-# ── statistics ────────────────────────────────────────────────────────────────
- 
-def tree_stats(node: GameTreeNode):
-    total, leaves, by_depth = [0], [0], {}
- 
-    def walk(n):
-        total[0] += 1
-        by_depth[n.depth] = by_depth.get(n.depth, 0) + 1
-        if not n.children:
-            leaves[0] += 1
-        for c in n.children:
-            walk(c)
- 
-    walk(node)
-    return {"total": total[0], "leaves": leaves[0], "by_depth": by_depth}
 
 
