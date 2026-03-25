@@ -1,5 +1,6 @@
 import math
 import copy
+from game_tree import build_game_tree
 
 def heuristic(state):
     """
@@ -26,29 +27,29 @@ class MinimaxAgent:
 
     def choose_move(self, game_state):
         tree = build_game_tree(game_state, max_depth=self.depth)  # ģenerē koku
-        best_move = self.minimax(tree)  # pārlūko koku
+        best_score = -math.inf
+        best_move = None
+
+        for child in tree.children:  # ← pārlūko koka bērnus
+            score = self.minimax(child, self.depth - 1, False)
+            if score > best_score:
+                best_score = score
+                best_move = child.move_info["index"]  # ← ņem gājiena indeksu no move_info
         return best_move
 
-    def minimax(self, state, depth, is_maximizing):
-        if depth == 0 or state.is_game_over():
-            # Evaluation: Computer Score - Opponent Score
-            scores = state.get_scores()
-            # Computer is Player 2 (index 1) and Human is Player 1 (index 0)
-            return heuristic(state)
+    def minimax(self, node, depth, is_maximizing):  # ← node ir GameTreeNode, ne state
+        if depth == 0 or node.state.is_game_over():
+            return heuristic(node.state)  # ← heiristika no node.state
 
         if is_maximizing:
             max_eval = -math.inf
-            for idx, _ in state.get_available_pairs():
-                child = copy.deepcopy(state)
-                child.apply_move(idx)
+            for child in node.children:  # ← pārlūko bērnus, ne get_available_pairs
                 eval = self.minimax(child, depth - 1, False)
                 max_eval = max(max_eval, eval)
             return max_eval
         else:
             min_eval = math.inf
-            for idx, _ in state.get_available_pairs():
-                child = copy.deepcopy(state)
-                child.apply_move(idx)
+            for child in node.children:
                 eval = self.minimax(child, depth - 1, True)
                 min_eval = min(min_eval, eval)
             return min_eval
@@ -59,19 +60,23 @@ class AlphaBetaAgent:
 
     def choose_move(self, game_state):
         tree = build_game_tree(game_state, max_depth=self.depth)  # ģenerē koku
-        best_move = self.minimax(tree)  # pārlūko koku
+        best_score = -math.inf
+        best_move = None
+
+        for child in tree.children:  # ← pārlūko koka bērnus
+            score = self.alphabeta(child, self.depth - 1, -math.inf, math.inf, False)
+            if score > best_score:
+                best_score = score
+                best_move = child.move_info["index"]  # ← ņem gājiena indeksu
         return best_move
 
-    def alphabeta(self, state, depth, alpha, beta, is_maximizing):
-        if depth == 0 or state.is_game_over():
-            scores = state.get_scores()
-            return heuristic(state)
+    def alphabeta(self, node, depth, alpha, beta, is_maximizing):  # ← node, ne state
+        if depth == 0 or node.state.is_game_over():
+            return heuristic(node.state)  # ← heiristika no node.state
 
         if is_maximizing:
             max_eval = -math.inf
-            for idx, _ in state.get_available_pairs():
-                child = copy.deepcopy(state)
-                child.apply_move(idx)
+            for child in node.children:  # ← pārlūko bērnus
                 eval = self.alphabeta(child, depth - 1, alpha, beta, False)
                 max_eval = max(max_eval, eval)
                 alpha = max(alpha, eval)
@@ -79,9 +84,7 @@ class AlphaBetaAgent:
             return max_eval
         else:
             min_eval = math.inf
-            for idx, _ in state.get_available_pairs():
-                child = copy.deepcopy(state)
-                child.apply_move(idx)
+            for child in node.children:  # ← pārlūko bērnus
                 eval = self.alphabeta(child, depth - 1, alpha, beta, True)
                 min_eval = min(min_eval, eval)
                 beta = min(beta, eval)
