@@ -10,24 +10,6 @@ class GameTreeNode:
         self.depth     = depth
         self.children  = []         # list[GameTreeNode]
  
-    # ── pretty helpers ────────────────────────────────────────────────────────
-    def sequence_str(self):
-        return "[" + ", ".join(str(x) for x in self.state.sequence) + "]"
- 
-    def scores_str(self):
-        s = self.state.scores
-        return f"P1={s[0]:+d}  P2={s[1]:+d}"
- 
-    def label(self):
-        if self.move_info is None:
-            return f"ROOT  seq={self.sequence_str()}  {self.scores_str()}"
-        mi = self.move_info
-        return (
-            f"[D{self.depth}] {mi['player']} picks pair '{mi['pair']}' "
-            f"@ idx {mi['index']} → '{mi['new_symbol']}'  "
-            f"seq={self.sequence_str()}  {self.scores_str()}"
-        )
- 
  
 # ── tree builder ──────────────────────────────────────────────────────────────
  
@@ -72,17 +54,3 @@ def _expand(node: GameTreeNode, remaining: int):
         )
         node.children.append(child_node)
         _expand(child_node, remaining - 1)
- 
- 
-# ── pretty-print ──────────────────────────────────────────────────────────────
- 
-def print_tree(node: GameTreeNode, prefix: str = "", is_last: bool = True):
-    connector = "└── " if is_last else "├── "
-    print(prefix + (connector if node.depth > 0 else "") + node.label())
-
-    child_prefix = prefix + ("    " if is_last else "│   ")
-    for i, child in enumerate(node.children):
-        print_tree(child, child_prefix, i == len(node.children) - 1)
- 
-
-
