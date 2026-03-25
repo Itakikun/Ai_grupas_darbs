@@ -45,8 +45,7 @@ class MinimaxAgent:
         if depth == 0 or state.is_game_over():
             # Evaluation: Computer Score - Opponent Score
             scores = state.get_scores()
-            # Assuming Computer is Player 2 (index 1) and Human is Player 1 (index 0)
-            # If the computer started, it might be index 0. We'll adjust based on current player.
+            # Computer is Player 2 (index 1) and Human is Player 1 (index 0)
             return heuristic(state)
 
         if is_maximizing:
