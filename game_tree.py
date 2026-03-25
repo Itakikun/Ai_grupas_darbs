@@ -1,9 +1,5 @@
 import copy
 from game_logic import GameState
- 
-# ── minimal stubs so game_tree.py works standalone ──────────────────────────
-MIN_LENGTH = 2
-MAX_LENGTH = 20
 
 class GameTreeNode:
     """One node in the game tree."""
