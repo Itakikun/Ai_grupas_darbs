@@ -25,20 +25,8 @@ class MinimaxAgent:
         self.depth = depth
 
     def choose_move(self, game_state):
-        best_score = -math.inf
-        best_move = None
-        
-        # We look at all possible moves from the current state
-        for idx, _ in game_state.get_available_pairs():
-            temp_state = copy.deepcopy(game_state)
-            temp_state.apply_move(idx)
-            
-            # Start the recursion (it's now the human's turn, so we minimize)
-            score = self.minimax(temp_state, self.depth - 1, False)
-            
-            if score > best_score:
-                best_score = score
-                best_move = idx
+        tree = build_game_tree(game_state, max_depth=self.depth)  # ģenerē koku
+        best_move = self.minimax(tree)  # pārlūko koku
         return best_move
 
     def minimax(self, state, depth, is_maximizing):
@@ -70,17 +58,8 @@ class AlphaBetaAgent:
         self.depth = depth
 
     def choose_move(self, game_state):
-        best_score = -math.inf
-        best_move = None
-        
-        for idx, _ in game_state.get_available_pairs():
-            temp_state = copy.deepcopy(game_state)
-            temp_state.apply_move(idx)
-            score = self.alphabeta(temp_state, self.depth - 1, -math.inf, math.inf, False)
-            
-            if score > best_score:
-                best_score = score
-                best_move = idx
+        tree = build_game_tree(game_state, max_depth=self.depth)  # ģenerē koku
+        best_move = self.minimax(tree)  # pārlūko koku
         return best_move
 
     def alphabeta(self, state, depth, alpha, beta, is_maximizing):
