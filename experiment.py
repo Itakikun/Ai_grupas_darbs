@@ -199,23 +199,29 @@ def run_experiment(
 
             # ── Play the full game ───────────────────────────────────────────
             while not state.is_game_over():
-                agent.nodes_generated = 0
+                if state.current_player == 0:
+                    possible = len(state.get_available_pairs())
+                    move_idx = random.randint(0, possible-1)
+                    state.apply_move(move_idx)
 
-                t0 = time.perf_counter()
-                move_idx = agent.choose_move(state)
-                t1 = time.perf_counter()
+                else:
+                    agent.nodes_generated = 0
 
-                elapsed     = t1 - t0
-                total_time  += elapsed
-                total_nodes += agent.nodes_generated
-                move_count  += 1
+                    t0 = time.perf_counter()
+                    move_idx = agent.choose_move(state)
+                    t1 = time.perf_counter()
 
-                if move_idx is None:
-                    # No move available – shouldn't happen with is_game_over check,
-                    # but guard against edge cases.
-                    break
+                    elapsed     = t1 - t0
+                    total_time  += elapsed
+                    total_nodes += agent.nodes_generated
+                    move_count  += 1
 
-                state.apply_move(move_idx)
+                    if move_idx is None:
+                        # No move available – shouldn't happen with is_game_over check,
+                        # but guard against edge cases.
+                        break
+
+                    state.apply_move(move_idx)
 
             scores = state.get_scores()
             winner = state.get_final_result_text()
